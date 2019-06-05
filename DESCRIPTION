@@ -1,0 +1,19 @@
+Package: chromasc
+Type: Package
+Title: Plots gene set enrichment along a single cell RNA-seq linear pseudotime trajectory
+Version: 0.1.0
+Authors@R: person("Alexander T.", "Wenzel", email = "atwenzel@ucsd.edu",
+  role = c("aut", "cre"))
+Maintainer: Alexander T. Wenzel <atwenzel@ucsd.edu>
+Description: This packages visualizes changes in gene set enrichment in RNA-seq data for single cells
+    arranged along a non-branching pseudotime trajectory.
+Depends: R (>= 3.5.1)
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    GSA (>= 1.03.1),
+    SCORPIUS (>= 1.0.2),
+    Seurat (>= 2.3.4),
+    scales (>= 1.0.0)
+RoxygenNote: 6.1.1
