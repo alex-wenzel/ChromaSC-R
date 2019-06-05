@@ -1,0 +1,217 @@
+---
+title: "ChromaSC example"
+output: html_notebook
+---
+
+### Libraries
+
+```{r}
+library(chromasc)
+library(SCORPIUS)
+library(Seurat)
+```
+
+### Load R14 cells and preprocess
+
+```{r}
+r14 <- Read10X(data.dir="../2019-03-10_c14_aggr-results/")
+r14 <- CreateSeuratObject(raw.data=r14, min.cells=3, min.genes=3, project="r14")
+mito.genes <- grep(pattern = "^MT-", x = rownames(x = r14@data), value = TRUE)
+percent.mito <- Matrix::colSums(r14@raw.data[mito.genes, ])/Matrix::colSums(r14@raw.data)
+r14 <- AddMetaData(object = r14, metadata = percent.mito, col.name = "percent.mito")
+```
+
+```{r}
+r14 <- FilterCells(r14, subset.names=c("nGene", "percent.mito"), low.thresholds=c(200,-Inf),
+                   high.thresholds=c(3700, 0.1))
+r14 <- NormalizeData(object=r14, normalization.method="LogNormalize", scale.factor=10000)
+r14 <- ScaleData(object=r14, vars.to.regress=c("nGene"))
+```
+
+```{r}
+r14@data <- as.matrix(r14@data)
+```
+
+### Load Seurat cell cycle genes
+
+```{r}
+cc.genes <- readLines(con="../regev_lab_cell_cycle_genes.txt")
+s.genes <- cc.genes[1:43]
+g2m.genes <- cc.genes[44:97]
+r14 <- CellCycleScoring(object=r14, s.genes=s.genes, g2m.genes=g2m.genes, set.ident=T)
+```
+
+### Convert sc data to matrix and keep only cell cycle genes
+
+```{r}
+common.genes <- intersect(rownames(r14@scale.data), cc.genes)
+r14.mat <- t(r14@scale.data[common.genes,])
+```
+
+### Reduce dimensionality with SCORPIUS
+
+```{r}
+space <- reduce_dimensionality(r14.mat, correlation_distance, ndim=3)
+```
+
+### Infer trajectory using SCORPIUS
+
+```{r}
+traj <- infer_trajectory(space)
+```
+
+### Draw trajectory plot
+
+```{r}
+draw_trajectory_plot(
+  space, 
+  progression_group = r14@ident,
+  path = traj$path,
+  contour = TRUE
+)
+```
+
+### Find candidate marker genes and draw heatmap
+
+```{r}
+gimp <- gene_importances(r14.mat, traj$time, num_permutations = 0, num_threads = 16)
+gene_sel <- gimp[1:50,]
+expr_sel <- r14.mat[,gene_sel$gene]
+```
+
+```{r}
+draw_trajectory_heatmap(expr_sel, traj$time, r14@ident)
+```
+
+### Parse metadata for line plotting
+
+```{r}
+exp.names <- c("r14_10u", "s02", "r14_15u_E", "s03", "r14_5u",
+               "r14_15u_L", "caov3", "parent")
+names(exp.names) <- 1:8
+
+get.pop.name <- function(bc) {
+  exp.names[as.numeric(strsplit(bc, "-")[[1]][2])]
+}
+
+md.df <- data.frame(
+  "traj.time" = traj$time,
+  "experiment" = sapply(r14@cell.names, get.pop.name)
+)
+
+md.df <- md.df[order(md.df$traj),]
+```
+
+```{r}
+caov3.cells <- md.df[md.df$experiment=="caov3",]
+parent.cells <- md.df[md.df$experiment=="parent",]
+s02.cells <- md.df[md.df$experiment=="s02",]
+s03.cells <- md.df[md.df$experiment=="s03",]
+step5.cells <- md.df[md.df$experiment=="r14_5u",]
+step10.cells <- md.df[md.df$experiment=="r14_10u",]
+step15E.cells <- md.df[md.df$experiment=="r14_15u_E",]
+step15L.cells <- md.df[md.df$experiment=="r14_15u_L",]
+```
+
+```{r}
+caov3.traj <- traj$time[rownames(caov3.cells)]
+parent.traj <- traj$time[rownames(parent.cells)]
+s02.traj <- traj$time[rownames(s02.cells)]
+s03.traj <- traj$time[rownames(s03.cells)]
+step5.traj <- traj$time[rownames(step5.cells)]
+step10.traj <- traj$time[rownames(step10.cells)]
+step15E.traj <- traj$time[rownames(step15E.cells)]
+step15L.traj <- traj$time[rownames(step15L.cells)]
+```
+
+```{r}
+r14.pops <- list(
+  "caov3"=caov3.traj,
+  "parent"=parent.traj,
+  "s02"=s02.traj,
+  "s03"=s03.traj,
+  "step5"=step5.traj,
+  "step10"=step10.traj,
+  "step15E"=step15E.traj,
+  "step15L"=step15L.traj
+)
+```
+
+### Run ChromaSC
+
+```{r}
+res <- ChromaSC(
+  seurat_obj = r14, 
+  traj_vecs = r14.pops, 
+  window_size = 0.2, 
+  step_size = 0.001, 
+  gmt_path = "../2019-03_cc-time/genesets/h.all.v6.2.symbols.gmt"
+)
+```
+
+```{r}
+caov3.hmrks <- res[[1]]
+parent.hmrks <- res[[2]]
+s02.hmrks <- res[[3]]
+s03.hmrks <- res[[4]]
+step5.hmrks <- res[[5]]
+step10.hmrks <- res[[6]]
+step15E.hmrks <- res[[7]]
+step15L.hmrks <- res[[8]]
+```
+
+### Function to plot combined gene set Lowess
+
+```{r}
+plot.ratio.lowess <- function(gs.name, f=0.2, ylim.min=NA, ylim.max=NA, leg.cex=2.0, main.cex=2.0) {
+  par(mar=c(5,6,4,1)+.1)
+  cs = c("#be5143", "#8dd165", "#7c4fc3", "#cea655", "#ca5fa4", "#566941", "#513856", "#95b6c3")
+  
+  x <- 1:dim(caov3.hmrks)[2]
+  
+  if (is.na(ylim.min) & is.na(ylim.max)) {
+    ylim.max <- max(
+      max(caov3.hmrks), max(parent.hmrks), max(s02.hmrks), max(s03.hmrks),
+      max(step5.hmrks), max(step10.hmrks), max(step15E.hmrks), max(step15L.hmrks)
+    )
+    ylim.min <- min(
+      min(caov3.hmrks), min(parent.hmrks), min(s02.hmrks), min(s03.hmrks),
+      min(step5.hmrks), min(step10.hmrks), min(step15E.hmrks), min(step15L.hmrks)
+    )
+  }
+  
+  plot(lowess(x, caov3.hmrks[gs.name,], f=f), col=cs[1], type='l', lwd=4, ylim=c(ylim.min, ylim.max), 
+       main=gs.name, cex.axis=2, cex.main=main.cex, xlab="Trajectory Bin (G2M --> S --> G1)",
+       ylab="Log2 Enrichment Score", cex.lab=2)
+  
+  lines(lowess(x, parent.hmrks[gs.name,], f=f), col=cs[2], type='l', lwd=4)
+  
+  lines(lowess(x, s02.hmrks[gs.name,], f=f), col=cs[3], type='l', lwd=4)
+  
+  lines(lowess(x, s03.hmrks[gs.name,], f=f), col=cs[4], type='l', lwd=4)
+  
+  lines(lowess(x, step5.hmrks[gs.name,], f=f), col=cs[5], type='l', lwd=4)
+  
+  lines(lowess(x, step10.hmrks[gs.name,], f=f), col=cs[6], type='l', lwd=4)
+  
+  lines(lowess(x, step15E.hmrks[gs.name,], f=f), col=cs[7], type='l', lwd=4)
+  
+  lines(lowess(x, step15L.hmrks[gs.name,], f=f), col=cs[8], type='l', lwd=4)
+  
+  leg.names <- c(
+    "caov3", "parent", "s02", "s03", "step5", "step 10", "step 15 (early)", "step 15 (late)"
+  )
+
+  legend("bottomleft", legend=leg.names, col=cs, lty=1, bty="n", cex=leg.cex, lwd=4)
+}
+```
+
+```{r, fig.asp=0.7}
+plot.ratio.lowess("HALLMARK_G2M_CHECKPOINT", f=0.2, ylim.min=0.2, ylim.max=2.0, leg.cex=1.4)
+```
+
+
+```{r, fig.asp=0.8}
+plot.ratio.lowess("HALLMARK_OXIDATIVE_PHOSPHORYLATION", f=0.2, ylim.min=0.5, ylim.max=2.0, leg.cex=1.2,
+                  main.cex=1.3)
+```
