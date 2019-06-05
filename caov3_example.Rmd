@@ -3,6 +3,13 @@ title: "ChromaSC example"
 output: html_notebook
 ---
 
+This notebook runs an example analysis using ChromaSC. The notebook uses the "clone 14" timecourse data from an analysis of chemoresistance in ovarian cancer detailed [here](https://www.biorxiv.org/content/10.1101/231548v1).
+
+Data sources: 
+- [Expression data](https://datasets.genepattern.org/?prefix=data/CAOV3_scRNAseq/)
+- [Regev Lab cell cycle gene sets](https://github.com/theislab/scanpy_usage/blob/master/180209_cell_cycle/data/regev_lab_cell_cycle_genes.txt)
+- [Hallmark gene set collection](http://software.broadinstitute.org/gsea/msigdb/download_file.jsp?filePath=/resources/msigdb/6.2/h.all.v6.2.symbols.gmt)
+
 ### Libraries
 
 ```{r}
