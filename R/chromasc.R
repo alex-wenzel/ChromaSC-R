@@ -138,5 +138,11 @@ ChromaSC <- function(seurat_obj, traj_vecs, window_size, step_size, gmt_path) {
     colnames(all_res[[j]]) <- paste("eff", 1:length(window_starts), sep="_")
   }
 
-  return(all_res)
+  #return(all_res)
+  return(
+    list(
+      enrichment=all_res,
+      winsizes=n_cells_windows
+    )
+  )
 }

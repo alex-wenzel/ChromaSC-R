@@ -156,21 +156,28 @@ res <- ChromaSC(
 )
 ```
 
+### Plot cells/window
+
 ```{r}
-caov3.hmrks <- res[[1]]
-parent.hmrks <- res[[2]]
-s02.hmrks <- res[[3]]
-s03.hmrks <- res[[4]]
-step5.hmrks <- res[[5]]
-step10.hmrks <- res[[6]]
-step15E.hmrks <- res[[7]]
-step15L.hmrks <- res[[8]]
+plot(res$winsizes)
+```
+
+
+```{r}
+caov3.hmrks <- res$enrichment[[1]]
+parent.hmrks <- res$enrichment[[2]]
+s02.hmrks <- res$enrichment[[3]]
+s03.hmrks <- res$enrichment[[4]]
+step5.hmrks <- res$enrichment[[5]]
+step10.hmrks <- res$enrichment[[6]]
+step15E.hmrks <- res$enrichment[[7]]
+step15L.hmrks <- res$enrichment[[8]]
 ```
 
 ### Function to plot combined gene set Lowess
 
 ```{r}
-plot.ratio.lowess <- function(gs.name, f=0.2, ylim.min=NA, ylim.max=NA, leg.cex=2.0, main.cex=2.0) {
+plot.ratio.lowess <- function(gs.name, f=0.2, ylim.min=NA, ylim.max=NA, leg.cex=2.0, main.cex=2.0, leg.loc="bottomleft") {
   par(mar=c(5,6,4,1)+.1)
   cs = c("#be5143", "#8dd165", "#7c4fc3", "#cea655", "#ca5fa4", "#566941", "#513856", "#95b6c3")
   
@@ -188,7 +195,7 @@ plot.ratio.lowess <- function(gs.name, f=0.2, ylim.min=NA, ylim.max=NA, leg.cex=
   }
   
   plot(lowess(x, caov3.hmrks[gs.name,], f=f), col=cs[1], type='l', lwd=4, ylim=c(ylim.min, ylim.max), 
-       main=gs.name, cex.axis=2, cex.main=main.cex, xlab="Trajectory Bin (G2M --> S --> G1)",
+       main=gs.name, cex.axis=2, cex.main=main.cex, xlab="Trajectory Bin",
        ylab="Log2 Enrichment Score", cex.lab=2)
   
   lines(lowess(x, parent.hmrks[gs.name,], f=f), col=cs[2], type='l', lwd=4)
@@ -209,16 +216,16 @@ plot.ratio.lowess <- function(gs.name, f=0.2, ylim.min=NA, ylim.max=NA, leg.cex=
     "caov3", "parent", "s02", "s03", "step5", "step 10", "step 15 (early)", "step 15 (late)"
   )
 
-  legend("bottomleft", legend=leg.names, col=cs, lty=1, bty="n", cex=leg.cex, lwd=4)
+  legend(leg.loc, legend=leg.names, col=cs, lty=1, bty="n", cex=leg.cex, lwd=4)
 }
 ```
 
 ```{r, fig.asp=0.7}
-plot.ratio.lowess("HALLMARK_G2M_CHECKPOINT", f=0.2, ylim.min=0.2, ylim.max=2.0, leg.cex=1.4)
+plot.ratio.lowess("HALLMARK_G2M_CHECKPOINT", f=0.2, ylim.min=0.2, ylim.max=2.0, leg.cex=1.2, leg.loc="bottomright")
 ```
 
 
 ```{r, fig.asp=0.8}
-plot.ratio.lowess("HALLMARK_OXIDATIVE_PHOSPHORYLATION", f=0.2, ylim.min=0.5, ylim.max=2.0, leg.cex=1.2,
+plot.ratio.lowess("HALLMARK_OXIDATIVE_PHOSPHORYLATION", f=0.2, ylim.min=1.5, ylim.max=2.5, leg.cex=1.2,
                   main.cex=1.3)
 ```
