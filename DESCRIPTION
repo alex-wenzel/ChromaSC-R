@@ -11,7 +11,8 @@ Depends: R (>= 3.5.1)
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: 
-    GSA (>= 1.03.1),
+Imports:
+    pbapply (>= 1.4.0),
     Seurat (== 2.3.3),
+    ggplot2 (>= 3.2.0)
 RoxygenNote: 6.1.1
