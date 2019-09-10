@@ -16,14 +16,36 @@ compare_populations <- function(pops1.pt, pops2.pt, escores, gene_set_name,
                                 region.start=NA, region.end=NA,
                                 window.size=NA, step.size=NA) {
   if (is.na(window.size)) {
-    pops1.pt.subs <- which(pops1.pt >= region.start & pops1.pt <= region.end)
-    pops2.pt.subs <- which(pops2.pt >= region.start & pops2.pt <= region.end)
-
-    pops1.subs <- escores[gene_set_name, names(pops1.pt.subs)]
-    pops2.subs <- escores[gene_set_name, names(pops2.pt.subs)]
-    print(c(length(pops1.subs), length(pops2.subs)))
-    return(wilcox.test(pops1.subs, pops2.subs)[c("statistic", "p.value")])
+    return(test_one_window(pops1.pt, pops2.pt, escores, gene_set_name,
+                           region.start, region.end))
   } else {
-    ## TODO
+    ## Define windows for scanning
+    windows <- data.frame(
+      window.starts = seq(0.0, 1.0-window.size, step.size),
+      window.ends = seq(window.size, 1.0, step.size)
+    )
+    ## Function for testing within a window
+    tests_res <- apply(windows, MARGIN=1,
+                       function(row)
+                         test_one_window(pops1.pt, pops2.pt, escores, gene_set_name,
+                                         row[1], row[2]))
+    res.df <- as.data.frame(t(matrix(unlist(tests_res), nrow=2)))
+    colnames(res.df) <- c("W", "p.value")
+    return(res.df)
   }
+}
+
+test_one_window <- function(pops1.pt, pops2.pt, escores, gene_set_name,
+                            region.start, region.end) {
+  ## Subset pseudotime within queried region
+  pops1.pt.subset <- which(pops1.pt >= region.start & pops1.pt <= region.end)
+  pops2.pt.subset <- which(pops2.pt >= region.start & pops2.pt <= region.end)
+
+  ## Extract the z scores for cells within the queried region for
+  ## the queried gene set
+  pops1.subset <- escores[gene_set_name, names(pops1.pt.subset)]
+  pops2.subset <- escores[gene_set_name, names(pops2.pt.subset)]
+
+  ## Return the MW-U test result
+  return(wilcox.test(pops1.subset, pops2.subset)[c("statistic", "p.value")])
 }
