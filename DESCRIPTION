@@ -7,12 +7,13 @@ Authors@R: person("Alexander T.", "Wenzel", email = "atwenzel@ucsd.edu",
 Maintainer: Alexander T. Wenzel <atwenzel@ucsd.edu>
 Description: This packages visualizes changes in gene set enrichment in RNA-seq data for single cells
     arranged along a non-branching pseudotime trajectory.
-Depends: R (>= 3.5.1)
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports:
+Depends:
+    R (>= 3.5.1),
     pbapply (>= 1.4.0),
     Seurat (== 2.3.3),
-    ggplot2 (>= 3.2.0)
+    ggplot2 (>= 3.2.0),
+    reshape2 (>= 1.4.3)
 RoxygenNote: 6.1.1
