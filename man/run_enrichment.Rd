@@ -4,18 +4,12 @@
 \alias{run_enrichment}
 \title{run_enrichment}
 \usage{
-run_enrichment(seurat_obj, traj_vecs, gmt_path, window_size, step_size)
+run_enrichment(seurat_obj, gene_sets, null_params)
 }
 \arguments{
 \item{seurat_obj}{A Seurat object}
 
-\item{traj_vecs}{A list of vectors of continuous values named by a subset of seurat_obj@cell.names}
-
-\item{gmt_path}{A path to a GMT file with one or more gene sets}
-
-\item{window_size}{The fraction of pseudotime to use for the sliding window}
-
-\item{step_size}{The fraction of pseudotime values to move the sliding window on each iteration}
+\item{gene_sets}{A gene set object loaded by `load_gene_sets()`}
 }
 \description{
 Hi

@@ -4,12 +4,15 @@
 \alias{compute_null_params}
 \title{compute_null_params}
 \usage{
-compute_null_params(seurat_obj, gene_sets)
+compute_null_params(seurat_obj, gene_sets, n_random_cells = 50)
 }
 \arguments{
 \item{seurat_obj}{A seurat object}
 
 \item{gene_sets}{Gene sets loaded with `load_gene_sets()`}
+
+\item{n_random_cells}{The number of random cells to generate to calculate the null parameters
+for each combination of cell size and gene set}
 }
 \description{
 This function computes the null distribution parameters for the input dataset. Use
