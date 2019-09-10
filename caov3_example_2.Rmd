@@ -1,0 +1,165 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### Libraries
+
+```{r}
+library(chromasc)
+library(ggplot2)
+library(SCORPIUS)
+library(Seurat)
+library(pheatmap)
+```
+
+### Load R14 cells and preprocess
+
+```{r}
+r14 <- Read10X(data.dir="../2019-03-10_c14_aggr-results/")
+r14 <- CreateSeuratObject(raw.data=r14, min.cells=3, min.genes=3, project="r14")
+mito.genes <- grep(pattern = "^MT-", x = rownames(x = r14@data), value = TRUE)
+percent.mito <- Matrix::colSums(r14@raw.data[mito.genes, ])/Matrix::colSums(r14@raw.data)
+r14 <- AddMetaData(object = r14, metadata = percent.mito, col.name = "percent.mito")
+```
+
+```{r}
+r14 <- FilterCells(r14, subset.names=c("nGene", "percent.mito"), low.thresholds=c(200,-Inf),
+                   high.thresholds=c(3700, 0.1))
+r14 <- NormalizeData(object=r14, normalization.method="LogNormalize", scale.factor=10000)
+r14 <- ScaleData(object=r14)
+```
+
+### Load gene sets
+
+```{r}
+hallmarks <- chromasc::load_gene_sets("../2019-03_cc-time/genesets/h.all.v6.2.symbols.gmt")
+```
+
+### Compute null parameters
+
+```{r}
+null_params <- chromasc::compute_null_params(r14, hallmarks, n_random_cells=50)
+```
+
+### Build pseudotime trajectory with SCORPIUS
+
+```{r}
+r14@data <- as.matrix(r14@data)
+```
+
+### Load Seurat cell cycle genes
+
+```{r}
+cc.genes <- readLines(con="../regev_lab_cell_cycle_genes.txt")
+s.genes <- cc.genes[1:43]
+g2m.genes <- cc.genes[44:97]
+r14 <- CellCycleScoring(object=r14, s.genes=s.genes, g2m.genes=g2m.genes, set.ident=T)
+```
+
+### Convert sc data to matrix and keep only cell cycle genes
+
+```{r}
+common.genes <- intersect(rownames(r14@scale.data), cc.genes)
+r14.mat <- t(r14@scale.data[common.genes,])
+```
+
+### Reduce dimensionality with SCORPIUS
+
+```{r}
+space <- reduce_dimensionality(r14.mat, correlation_distance, ndim=3)
+```
+
+### Infer trajectory using SCORPIUS
+
+```{r}
+traj <- infer_trajectory(space)
+```
+
+### Draw trajectory plot
+
+```{r}
+draw_trajectory_plot(
+  space, 
+  progression_group = r14@ident,
+  path = traj$path,
+  contour = TRUE
+)
+```
+
+```{r}
+gimp <- gene_importances(r14.mat, traj$time, num_permutations = 0, num_threads = 16)
+gene_sel <- gimp[1:50,]
+expr_sel <- r14.mat[,gene_sel$gene]
+```
+
+```{r}
+draw_trajectory_heatmap(expr_sel, traj$time, r14@ident)
+```
+
+### Parse metadata for line plotting
+
+```{r}
+exp.names <- c("r14_10u", "s02", "r14_15u_E", "s03", "r14_5u",
+               "r14_15u_L", "caov3", "parent")
+names(exp.names) <- 1:8
+
+get.pop.name <- function(bc) {
+  exp.names[as.numeric(strsplit(bc, "-")[[1]][2])]
+}
+
+md.df <- data.frame(
+  "traj.time" = traj$time,
+  "experiment" = sapply(r14@cell.names, get.pop.name)
+)
+
+md.df <- md.df[order(md.df$traj),]
+```
+
+```{r}
+caov3.cells <- md.df[md.df$experiment=="caov3",]
+parent.cells <- md.df[md.df$experiment=="parent",]
+s02.cells <- md.df[md.df$experiment=="s02",]
+s03.cells <- md.df[md.df$experiment=="s03",]
+step5.cells <- md.df[md.df$experiment=="r14_5u",]
+step10.cells <- md.df[md.df$experiment=="r14_10u",]
+step15E.cells <- md.df[md.df$experiment=="r14_15u_E",]
+step15L.cells <- md.df[md.df$experiment=="r14_15u_L",]
+```
+
+```{r}
+caov3.traj <- traj$time[rownames(caov3.cells)]
+parent.traj <- traj$time[rownames(parent.cells)]
+s02.traj <- traj$time[rownames(s02.cells)]
+s03.traj <- traj$time[rownames(s03.cells)]
+step5.traj <- traj$time[rownames(step5.cells)]
+step10.traj <- traj$time[rownames(step10.cells)]
+step15E.traj <- traj$time[rownames(step15E.cells)]
+step15L.traj <- traj$time[rownames(step15L.cells)]
+```
+
+```{r}
+r14.pops <- list(
+  "caov3"=caov3.traj,
+  "parent"=parent.traj,
+  "s02"=s02.traj,
+  "s03"=s03.traj,
+  "step5"=step5.traj,
+  "step10"=step10.traj,
+  "step15E"=step15E.traj,
+  "step15L"=step15L.traj
+)
+```
+
+### Run per-cell enrichment
+
+```{r}
+enrichment <- chromasc::run_enrichment(r14, hallmarks, null_params)
+```
+
+### Visualize hallmark enrichments
+
+```{r}
+chromasc::show_populations_enrichment(enrichment, r14.pops, names(hallmarks)[1:2])
+```
+
