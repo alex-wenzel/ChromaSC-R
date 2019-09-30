@@ -160,6 +160,8 @@ enrichment <- chromasc::run_enrichment(r14, hallmarks, null_params)
 ### Visualize hallmark enrichments
 
 ```{r}
-chromasc::show_populations_enrichment(enrichment, r14.pops, names(hallmarks)[1:2])
+chromasc::show_populations_enrichment(enrichment, r14.pops, names(hallmarks))
 ```
+
+
 
