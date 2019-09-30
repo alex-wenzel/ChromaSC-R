@@ -7,7 +7,7 @@ get_es <- function(cell, gene_set) {
 }
 
 get_z_es <- function(cell_name, seurat_obj, gene_set, null_params) {
-  cell <- r14@data[,cell_name]
+  cell <- seurat_obj@data[,cell_name]
   cell_size <- as.character(length(names(cell[cell>0])))
   gene_set_size <- as.character(length(gene_set))
 
