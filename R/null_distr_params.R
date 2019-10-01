@@ -17,16 +17,17 @@ get.es.2 <- function(cell, transcriptome, gene_set) {
 #' `save_null_params()` and `load_null_params()` to skip this step for future analyses with the same
 #' gene sets and data.
 #'
-#' @param seurat_obj A seurat object
+#' @param expr_mat A sparse Matrix object
 #' @param gene_sets Gene sets loaded with `load_gene_sets()`
 #' @param n_random_cells The number of random cells to generate to calculate the null parameters
 #' for each combination of cell size and gene set
-compute_null_params <- function(seurat_obj, gene_sets, n_random_cells=50) {
+compute_null_params <- function(expr_mat, gene_sets, n_random_cells=50) {
   ## Get a vector of what fraction of cells express each gene
-  frac_expressed <- apply(seurat_obj@data, 1, function(r)sum(r!=0))/seurat_obj@raw.data@Dim[2]
+  frac_expressed <- apply(expr_mat, 1, function(r)sum(r!=0))/expr_mat@Dim[2]
 
   ## Get all unique sizes of all cells
-  cell_sizes = sort(unique(seurat_obj@meta.data$nGene))
+  nGene <- apply(expr_mat, 2, function(col)sum(col!=0))
+  cell_sizes = sort(unique(nGene))
 
   ## Get all unique sizes of gene sets
   gene_set_sizes = sort(unique(sapply(gene_sets, length)))
@@ -42,7 +43,6 @@ compute_null_params <- function(seurat_obj, gene_sets, n_random_cells=50) {
   for (i  in 1:length(cell_sizes)) {
     rand_cells <- get.random.cells(n_random_cells, cell_sizes[i], frac_expressed)
     for (j in 1:length(gene_set_sizes)) {
-      #rand_gene_set <- get.random.cell(names(frac_expressed), gene_set_sizes[j], frac_expressed)
       rand_gene_set <- get.random.cells(1, gene_set_sizes[j], frac_expressed)[,1]
       escores <- apply(rand_cells, MARGIN=2, FUN=get.es.2,
                        transcriptome=names(frac_expressed),
