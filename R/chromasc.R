@@ -6,8 +6,8 @@ get_es <- function(cell, gene_set) {
   return(gs_genes_frac)
 }
 
-get_z_es <- function(cell_name, seurat_obj, gene_set, null_params) {
-  cell <- seurat_obj@data[,cell_name]
+get_z_es <- function(col_num, expr_mat, gene_set, null_params) {
+  cell <- expr_mat[,col_num]
   cell_size <- as.character(length(names(cell[cell>0])))
   gene_set_size <- as.character(length(gene_set))
 
@@ -28,18 +28,18 @@ get_z_es <- function(cell_name, seurat_obj, gene_set, null_params) {
 #'
 #' @description Hi
 #'
-#' @param seurat_obj A Seurat object
+#' @param expr_mat An expression matrix
 #' @param gene_sets A gene set object loaded by `load_gene_sets()`
-
-run_enrichment <- function(seurat_obj, gene_sets, null_params) {
-  return(
-    pbsapply(
-      seurat_obj@cell.names,
-      function(cell.name) sapply(
-        names(gene_sets),
-        function(gs_name) get_z_es(cell.name, gene_set=gene_sets[[gs_name]],
-                                   seurat_obj=seurat_obj, null_params=null_params)
-      ), simplify=T
+run_enrichment <- function(expr_mat, gene_sets, null_params) {
+  unsparse_expr <- as.matrix(expr_mat)
+  res <- pbsapply(
+        seq(expr_mat@Dim[2]),
+        function(col_num) sapply(
+          names(gene_sets),
+          function(gs_name) get_z_es(col_num, gene_set=gene_sets[[gs_name]],
+                                    expr_mat=unsparse_expr, null_params=null_params)
+        ), simplify=T
     )
-  )
+  colnames(res) <- expr_mat@Dimnames[[2]]
+  return(res)
 }
