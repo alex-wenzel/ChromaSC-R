@@ -6,8 +6,6 @@
 #' @param trajs A list of vectors of pseudotime values named by cells found in the columns of `escores`
 #' @param gene_sets The names of gene sets to visualize (subset of the `rownames` of `escores`)
 show_populations_enrichment <- function(escores, trajs, gene_sets) {
-  cols <- c("#4c4138", "#9345c2", "#85ca5c", "#64619f",
-          "#bc9f50", "#c56391", "#8cbcb3", "#c4543b")
   flat_trajs <- as.data.frame(unlist(trajs))
   colnames(flat_trajs) <- c("pseudotime")
   lineages <- sapply(rownames(flat_trajs), function(s)strsplit(s, ".", fixed=T)[[1]][1])
@@ -26,6 +24,7 @@ plot_gs_enrichment <- function(escores, gene_set_name, flat_trajs, lineages) {
   enrichment_melted <- melt(data=escores[gene_set_name,])
   enrichment_melted$pseudotime <- sapply(rownames(enrichment_melted), function(cid)flat_trajs[cid, "pseudotime"])
   enrichment_melted$lineage <- sapply(rownames(enrichment_melted), function(cid)lineages[cid])
+  enrichment_melted <- enrichment_melted[complete.cases(enrichment_melted),]
 
   print(ggplot(data=enrichment_melted, aes(x=pseudotime, y=value, group=lineage, colour=lineage, fill=lineage)) +
           geom_smooth(method='loess', level=0.95) +

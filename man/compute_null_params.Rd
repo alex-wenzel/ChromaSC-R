@@ -4,10 +4,10 @@
 \alias{compute_null_params}
 \title{compute_null_params}
 \usage{
-compute_null_params(seurat_obj, gene_sets, n_random_cells = 50)
+compute_null_params(expr_mat, gene_sets, n_random_cells = 50)
 }
 \arguments{
-\item{seurat_obj}{A seurat object}
+\item{expr_mat}{A sparse Matrix object}
 
 \item{gene_sets}{Gene sets loaded with `load_gene_sets()`}
 

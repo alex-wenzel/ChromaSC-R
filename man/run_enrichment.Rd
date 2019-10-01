@@ -4,10 +4,10 @@
 \alias{run_enrichment}
 \title{run_enrichment}
 \usage{
-run_enrichment(seurat_obj, gene_sets, null_params)
+run_enrichment(expr_mat, gene_sets, null_params)
 }
 \arguments{
-\item{seurat_obj}{A Seurat object}
+\item{expr_mat}{An expression matrix}
 
 \item{gene_sets}{A gene set object loaded by `load_gene_sets()`}
 }
