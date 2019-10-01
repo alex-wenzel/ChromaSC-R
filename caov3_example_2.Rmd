@@ -11,6 +11,7 @@ library(ggplot2)
 library(SCORPIUS)
 library(Seurat)
 library(pheatmap)
+library(Matrix)
 ```
 
 ### Load R14 cells and preprocess
@@ -30,6 +31,13 @@ r14 <- NormalizeData(object=r14, normalization.method="LogNormalize", scale.fact
 r14 <- ScaleData(object=r14)
 ```
 
+### Get Matrix representation of r14@data
+
+```{r}
+r14.input <- Matrix(r14@data, sparse=TRUE)
+```
+
+
 ### Load gene sets
 
 ```{r}
@@ -39,13 +47,13 @@ hallmarks <- chromasc::load_gene_sets("../2019-03_cc-time/genesets/h.all.v6.2.sy
 ### Compute null parameters
 
 ```{r}
-null_params <- chromasc::compute_null_params(r14, hallmarks, n_random_cells=50)
+null_params <- chromasc::compute_null_params(r14.input, hallmarks, n_random_cells=50)
 ```
 
 ### Build pseudotime trajectory with SCORPIUS
 
 ```{r}
-r14@data <- as.matrix(r14@data)
+#r14@data <- as.matrix(r14@data)
 ```
 
 ### Load Seurat cell cycle genes
@@ -154,7 +162,7 @@ r14.pops <- list(
 ### Run per-cell enrichment
 
 ```{r}
-enrichment <- chromasc::run_enrichment(r14, hallmarks, null_params)
+enrichment <- chromasc::run_enrichment(r14.input, hallmarks, null_params)
 ```
 
 ### Visualize hallmark enrichments
