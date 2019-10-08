@@ -16,7 +16,7 @@ show_populations_enrichment <- function(escores, trajs, gene_sets) {
 
   for (gene_set_name in gene_sets) {
     print(gene_set_name)
-    plot_gs_enrichment(enrichment, gene_set_name, flat_trajs, lineages)
+    plot_gs_enrichment(escores, gene_set_name, flat_trajs, lineages)
   }
 }
 
