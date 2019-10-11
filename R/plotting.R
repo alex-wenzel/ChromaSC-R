@@ -21,13 +21,24 @@ show_populations_enrichment <- function(escores, trajs, gene_sets) {
 }
 
 plot_gs_enrichment <- function(escores, gene_set_name, flat_trajs, lineages) {
-  enrichment_melted <- melt(data=escores[gene_set_name,])
+  enrichment_melted <- melt(data = escores[gene_set_name,])
   enrichment_melted$pseudotime <- sapply(rownames(enrichment_melted), function(cid)flat_trajs[cid, "pseudotime"])
   enrichment_melted$lineage <- sapply(rownames(enrichment_melted), function(cid)lineages[cid])
   enrichment_melted <- enrichment_melted[complete.cases(enrichment_melted),]
 
-  print(ggplot(data=enrichment_melted, aes(x=pseudotime, y=value, group=lineage, colour=lineage, fill=lineage)) +
-          geom_smooth(method='loess', level=0.95) +
-          ggtitle(gene_set_name)) +
-          ylab("z-Score")
+  print(ggplot(data = enrichment_melted, aes(x = pseudotime, y = value, group = lineage,
+                                             colour = lineage, fill = lineage)) +
+          geom_smooth(method = 'loess', level = 0.95) +
+          ggtitle(gene_set_name) +
+          ylab("z-Score") +
+          theme(
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 18),
+            axis.title.y = element_text(size = 18),
+            plot.title = element_text(size = 20, hjust = 0.5),
+            legend.title = element_text(size=16),
+            legend.text = element_text(size=14)
+          )
+  )
 }
