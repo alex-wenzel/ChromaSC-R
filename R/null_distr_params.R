@@ -37,7 +37,11 @@ compute_null_params <- function(expr_mat, gene_sets, n_random_cells=50) {
   null_vars <- matrix(data=NA, nrow=length(cell_sizes), ncol=length(gene_set_sizes))
 
   ## Build a progress bar for the null calculations specifically
-  prog_bar <- txtProgressBar(min=0, max=length(cell_sizes), style=3)
+  #prog_bar <- txtProgressBar(min=0, max=length(cell_sizes), style=3)
+  prog_bar <- progress_bar$new(
+    format = "[:bar] :percent eta: :eta", total=length(cell_sizes),
+    clear=F, width=150, force=TRUE
+  )
 
   ## Compute null means and variance
   for (i  in 1:length(cell_sizes)) {
@@ -50,7 +54,8 @@ compute_null_params <- function(expr_mat, gene_sets, n_random_cells=50) {
       null_means[i, j] <- mean(escores)
       null_vars[i, j] <- var(escores)
     }
-    setTxtProgressBar(prog_bar, i)
+    #setTxtProgressBar(prog_bar, i)
+    prog_bar$tick()
   }
   rownames(null_means) <- cell_sizes
   rownames(null_vars) <- cell_sizes
