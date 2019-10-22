@@ -15,5 +15,6 @@ Depends:
     pbapply (>= 1.4.0),
     Seurat (== 2.3.3),
     ggplot2 (>= 3.2.0),
-    reshape2 (>= 1.4.3)
+    reshape2 (>= 1.4.3),
+    progress (>= 1.2.2)
 RoxygenNote: 6.1.1
